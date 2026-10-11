@@ -46,7 +46,7 @@ On reprend les valeurs X, Y, Z obtenues précédemment, avec la méthode itérat
 - Affichage du résultat en décimal et en DMS
 - Liste des points convertis, cliquable pour recentrer la vue
 - Grille latitude / longitude avec pas réglable (10°, 15°, 30°)
-
+- Test unitaire sur un point Merchich (voir plus bas)
 
 
 
@@ -64,4 +64,15 @@ Pour le sens inverse, λ = atan2(Y, X), puis φ et h sont obtenus soit par une f
 directe (sans boucle), soit par itération jusqu'à convergence.
 
 
+## Test unitaire : point Merchich
+
+Un test unitaire (unittest, inclus avec Python) vérifie que les deux conversions sont justes sur un point, avec l'ellipsoïde Clarke 1880 (Merchich).
+
+
+φ	35.7595°
+λ	-5.8337°
+h	60 m
+X attendu	5155038.651 m
+Y attendu	-526693.268 m
+Z attendu	3706332.466 m
 
