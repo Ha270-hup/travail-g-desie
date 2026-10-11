@@ -28,6 +28,7 @@ Le même point est placé sur le globe terrestre, que l'on peut faire tourner à
 ![Schéma géodésique](schema.png)
 
 **3. Conversion ② : retour vers (φ, λ, h)**
+
 On reprend les valeurs X, Y, Z obtenues précédemment, avec la méthode itérative. Le programme retrouve φ = 35.759500000°, λ = -5.833700000° et h = 60.0000 m, soit en DMS φ = 35° 45' 34.200" et λ = -5° 50' 01.320". Le point 2 (en rouge) se superpose au point 1 dans la liste des points convertis : cela confirme que les deux conversions sont cohérentes.
 ![Vue Terre](terre.png)
 
