@@ -37,10 +37,15 @@ Je reprends les valeurs X, Y, Z obtenues précédemment, avec la méthode itéra
 ## Fonctionnalités
 
 -Plusieurs ellipsoïdes sont proposés : Clarke 1880 (Merchich), GRS 80, WGS 84, Hayford 1909, ou un ellipsoïde personnalisé dont on renseigne a et b.
+
 -Les angles se saisissent en degrés décimaux ou en degrés-minutes-secondes (par exemple 35 45 34.2 N ou 5°50'01"W).
+
 -Le résultat s’affiche en décimal et en degrés-minutes-secondes.
+
 -Les points convertis sont rangés dans une liste. Un clic sur l’un d’eux recentre la vue dessus.
+
 -Une grille de latitude et de longitude peut être affichée, avec un pas réglable (10°, 15° ou 30°).
+
 -Un test unitaire a été écrit sur le point Merchich du cours (voir plus bas)
 
 
