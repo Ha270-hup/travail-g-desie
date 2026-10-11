@@ -1,3 +1,4 @@
+#HANAE EL KHIATI
 """
 Conversion de coordonnées géodésiques + visualisation intelligente (schéma 3D et Terre)
   ①  (phi, lambda, h)  ->  (X, Y, Z)
