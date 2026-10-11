@@ -47,13 +47,17 @@ Je reprends les valeurs X, Y, Z obtenues précédemment, avec la méthode itéra
 
 ## Formules utilisées
 
-Je calcule d'abord l'excentricité au carré, e² = (a² − b²) / a², puis le rayon de courbure du premier vertical, N = a / √(1 − e² sin²φ).
+Je calcule d'abord l'excentricité au carré, e² = (a² − b²) / a², puis le rayon de courbure du premier vertical,
+N = a / √(1 − e² sin²φ).
 
 Pour passer de (φ, λ, h) à (X, Y, Z) :
 
 X = (N + h) cos φ cos λ
+
 Y = (N + h) cos φ sin λ
+
 Z = (N (1 − e²) + h) sin φ
+
 
 Pour le sens inverse, je calcule la longitude avec λ = atan2(Y, X). Pour la latitude φ et la hauteur h, j'ai programmé deux méthodes : une formule directe, sans boucle, et une méthode itérative où je corrige φ à chaque tour jusqu'à ce qu'il ne change presque plus.
 
