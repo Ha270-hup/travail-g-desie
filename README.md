@@ -13,6 +13,12 @@ Chaque point converti est affiché :
 - sur un **globe terrestre 3D** que l'on fait tourner à la souris.
 
   ### Captures de l'interface
+  On saisit φ = 35.7595°, λ = -5.8337° et h = 60 m sur l'ellipsoïde Clarke 1880 (Merchich). Le programme calcule X = 5155038.6514 m, Y = -526693.2683 m et Z = 3706332.4660 m. Le schéma montre le point P1 sur l'ellipsoïde avec :
+
+les axes X, Y, Z et le méridien du point (en jaune) ;
+la normale à la surface, la hauteur h (en rose) et les angles φ et λ ;
+les projections en pointillés qui donnent X, Y et Z ;
+l'équateur en turquoise.
  
 ![Fenêtre principale](conversion2.png)
 
