@@ -5,7 +5,7 @@ Conversion de coordonnées géodésiques + visualisation intelligente (schéma 3
   ②  (X, Y, Z)         ->  (phi, lambda, h)
 Chaque point converti est placé sur la Terre (globe 3D, glisser pour tourner).
 """
-# Dans ce TP je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
+# je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
 # en coordonnées cartésiennes (X, Y, Z), et aussi dans l'autre sens.
 # J'ai ajouté un dessin pour voir le résultat : un schéma 3D de l'ellipsoïde et la Terre.
 #
@@ -20,7 +20,7 @@ import unittest
 import tkinter as tk
 from tkinter import ttk
 
-# ====================================================================== calcul
+#  calcul:
 # La Terre n'est pas une sphère parfaite, elle est un peu aplatie aux pôles. Je la représente
 # donc par un ellipsoïde, défini par deux longueurs en mètres :
 #   a = le demi-grand axe (le rayon à l'équateur)
@@ -142,7 +142,7 @@ def dms(x):
     return f"{sg}{d}° {m:02d}' {(x - d - m / 60) * 3600:06.3f}\""
 
 
-# ====================================================================== continents (contours simplifiés lon, lat)
+#  continents (contours simplifiés lon, lat):
 # Pour dessiner la Terre, j'ai noté à la main des contours très simplifiés des continents
 # (des points longitude, latitude). Ce n'est pas précis du tout, c'est juste pour se repérer.
 CONTINENTS = [
@@ -225,15 +225,13 @@ def build_land_dots(step=2.2):
     return dots
 
 
-# ====================================================================== interface
-# ----------------------------------------------------------------------
+#  interface:
 # Thèmes de couleurs. Pour changer l'apparence du programme, il suffit de modifier
 # THEME juste en dessous, ou de lancer le programme avec le nom du thème :
 #     python mon_fichier.py clair
 # Thèmes disponibles : sombre, clair, foret, violet, chaud, ocean
 # Chaque thème donne une couleur à tous les éléments : fond, cartes, champs, texte,
 # couleur d'accent, globe, axes X Y Z, quadrillage, etc.
-# ----------------------------------------------------------------------
 THEMES = {
     "sombre": dict(BG="#0f172a", CARD="#1b2740", FIELD="#0b1220", LINE="#334155", FG="#e5e9f0",
                    MUTED="#94a3b8", ACC="#2dd4bf", ERR="#f87171", OK="#34d399",
@@ -447,7 +445,7 @@ class App(tk.Tk):
         # Je lance l'animation.
         self.tick()
 
-    # ------------------------------------------------------------ helpers graphiques
+    # helpers graphiques
     # --- Petites fonctions pour ne pas répéter le même code à chaque fois que je crée un champ,
     # un bouton, etc. ---
     def entry(self, parent, width, var=None):
@@ -496,7 +494,7 @@ class App(tk.Tk):
     def say(self, msg, ok=True):
         self.status.config(text=("✔ " if ok else "✖ ") + msg, fg=OK if ok else ERR)
 
-    # ------------------------------------------------------------ logique
+    #  logique:
     # Quand je change d'ellipsoïde dans la liste, j'affiche ses valeurs a et b. Je ne peux les
     # modifier à la main que si je choisis « Personnalisé ».
     def maj_ell(self):
@@ -570,7 +568,7 @@ class App(tk.Tk):
         self.ajouter_point(phi, lam, "②", h, (X, Y, Z))
         self.say("Conversion ② effectuée.")
 
-    # ------------------------------------------------------------ points sur la Terre
+    #  points sur la Terre:
     # J'enregistre le point converti : je lui donne une couleur, je l'ajoute à la liste sous le
     # dessin, et je tourne la vue vers lui.
     def ajouter_point(self, phi, lam, op, h=0.0, xyz=(0.0, 0.0, 0.0)):
@@ -611,7 +609,7 @@ class App(tk.Tk):
         self.spin += dx * 0.01
         self.tilt = max(-1.4, min(1.4, self.tilt + dy * 0.01))
 
-    # ------------------------------------------------------------ dessin du globe
+    #  dessin du globe:
     # Je calcule une seule fois par image les cosinus et sinus de la rotation, pour ne pas les
     # refaire à chaque point.
     def _rot(self):
@@ -887,12 +885,10 @@ class App(tk.Tk):
         self.after(33, self.tick)
 
 
-# ======================================================================
 # TEST UNITAIRE : le point Merchich
 # Pour le lancer :   python conversion_geodesique_avec_tests.py --test
 # Le but : vérifier que mes deux conversions sont justes sur un point connu, avec
 # l'ellipsoïde Clarke 1880 (celui de Merchich).
-# ======================================================================
 class TestPointMerchich(unittest.TestCase):
     # Mon point de test : φ et λ en degrés, h en mètres, et les X, Y, Z que je dois retrouver
     # (en mètres, arrondis au millimètre). Je les ai recoupés avec une autre formule pour être
