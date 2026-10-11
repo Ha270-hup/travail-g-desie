@@ -1,3 +1,4 @@
+# HANAE EL KHIATI
 # Conversion de coordonnées géodésiques
 
 Application Python (Tkinter) qui convertit des coordonnées géodésiques en coordonnées
