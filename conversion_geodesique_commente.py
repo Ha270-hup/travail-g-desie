@@ -4,7 +4,7 @@ Conversion de coordonnées géodésiques + visualisation intelligente (schéma 3
   ②  (X, Y, Z)         ->  (phi, lambda, h)
 Chaque point converti est placé sur la Terre (globe 3D, glisser pour tourner).
 """
-# Dans ce TP je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
+#  je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
 # en coordonnées cartésiennes (X, Y, Z), et aussi dans l'autre sens.
 # J'ai ajouté un dessin pour voir le résultat : un schéma 3D de l'ellipsoïde et la Terre.
 #
