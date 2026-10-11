@@ -4,25 +4,27 @@ Conversion de coordonnées géodésiques + visualisation intelligente (schéma 3
   ②  (X, Y, Z)         ->  (phi, lambda, h)
 Chaque point converti est placé sur la Terre (globe 3D, glisser pour tourner).
 """
-# Ce programme convertit des coordonnées géographiques (φ, λ, h) en coordonnées
-# cartésiennes (X, Y, Z), et dans l'autre sens. Il dessine aussi le résultat, sur un
-# schéma 3D de l'ellipsoïde et sur la Terre.
+# Dans ce TP je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
+# en coordonnées cartésiennes (X, Y, Z), et aussi dans l'autre sens.
+# J'ai ajouté un dessin pour voir le résultat : un schéma 3D de l'ellipsoïde et la Terre.
 #
-# Petite remarque : dans les calculs on travaille en radians et en mètres, mais à
-# l'écran on affiche des degrés, car c'est beaucoup plus parlant pour l'utilisateur.
+# Une chose à retenir : dans les calculs je travaille en radians et en mètres, mais
+# l'utilisateur voit et tape des degrés, parce que c'est plus facile à lire.
 import math
 import random
 import re
 import sys
 import time
+import unittest
 import tkinter as tk
 from tkinter import ttk
 
 # ====================================================================== calcul
-# La Terre n'est pas une sphère parfaite : elle est un peu aplatie aux pôles, on la
-# modélise donc par un ellipsoïde. Chaque ellipsoïde est défini par deux longueurs :
-# a = demi-grand axe (le rayon à l'équateur) et b = demi-petit axe (le rayon aux pôles),
-# en mètres. Clarke 1880 est celui du système Merchich, utilisé au Maroc.
+# La Terre n'est pas une sphère parfaite, elle est un peu aplatie aux pôles. Je la représente
+# donc par un ellipsoïde, défini par deux longueurs en mètres :
+#   a = le demi-grand axe (le rayon à l'équateur)
+#   b = le demi-petit axe (le rayon aux pôles)
+# Clarke 1880 est l'ellipsoïde du système Merchich, celui qu'on utilise au Maroc.
 ELLIPSOIDES = {
     "Clarke 1880 (Merchich)": (6378249.145, 6356515.0),
     "GRS 80": (6378137.0, 6356752.314),
@@ -31,80 +33,78 @@ ELLIPSOIDES = {
 }
 
 
-# L'excentricité (au carré) mesure à quel point l'ellipsoïde est aplati. Comme on en a
-# besoin dans presque toutes les formules, on la calcule dans une petite fonction à part.
+# e² s'appelle l'excentricité au carré : plus elle est grande, plus l'ellipsoïde est aplati.
+# Je l'utilise dans presque toutes les formules, donc je la calcule une fois ici.
 def e2_of(a, b):
     return (a * a - b * b) / (a * a)
 
 
-# N est le « rayon de courbure du premier vertical ». En clair : c'est la distance entre
-# un point de l'ellipsoïde et l'axe des pôles, mesurée le long de la perpendiculaire à la
-# surface (la normale). Sur une sphère ce serait simplement le rayon, mais ici N change
-# avec la latitude.
+# N est le rayon de courbure du premier vertical. Pour moi, c'est la distance entre un point
+# de l'ellipsoïde et l'axe des pôles, mesurée le long de la normale (la perpendiculaire à la
+# surface). Sur une sphère ce serait juste le rayon, mais ici N dépend de la latitude.
 def N_of(phi, a, e2):
     return a / math.sqrt(1 - e2 * math.sin(phi) ** 2)
 
 
-# Conversion ① : on connaît la latitude φ, la longitude λ et la hauteur h, et on veut
-# X, Y, Z (le repère 3D dont l'origine est le centre de la Terre). Les angles arrivent
-# déjà en radians.
+# CONVERSION ① : je connais φ, λ et h et je veux X, Y, Z (un repère 3D dont l'origine est le
+# centre de la Terre). Les angles arrivent déjà en radians.
 def geo_to_cart(phi, lam, h, a, b):
     e2 = e2_of(a, b)
-    # On commence par calculer N à la latitude du point, car X, Y et Z en ont besoin.
+    # Je calcule d'abord N à la latitude du point, parce que X, Y et Z en dépendent.
     N = N_of(phi, a, e2)
-    # X et Y : on part de la distance (N + h), on la ramène dans le plan de l'équateur avec
-    # cos φ, puis on la tourne autour de l'axe des pôles avec cos λ et sin λ.
-    # Z : sin φ donne la hauteur par rapport au plan de l'équateur. Le facteur (1 - e²)
-    # vient de l'aplatissement : sur un ellipsoïde, la normale ne passe pas par le centre.
+    # Pour X et Y : je pars de (N + h), je le ramène dans le plan de l'équateur avec cos φ, puis
+    # je le tourne autour de l'axe des pôles avec cos λ et sin λ.
+    # Pour Z : sin φ donne la hauteur par rapport à l'équateur. Le facteur (1 - e²) vient de
+    # l'aplatissement : sur un ellipsoïde la normale ne passe pas par le centre de la Terre.
     return ((N + h) * math.cos(phi) * math.cos(lam),
             (N + h) * math.cos(phi) * math.sin(lam),
             (N * (1 - e2) + h) * math.sin(phi))
 
 
-# Conversion ② - méthode directe : on connaît X, Y, Z et on cherche φ, λ, h.
-# Le souci, c'est que φ et h dépendent l'un de l'autre. Ici on contourne le problème avec
-# une formule toute faite qui donne φ d'un coup, sans boucle.
+# CONVERSION ② (méthode directe) : je connais X, Y, Z et je cherche φ, λ, h.
+# Le problème, c'est que φ et h dépendent l'un de l'autre. Avec cette méthode je m'en sors
+# grâce à une formule toute faite qui donne φ directement, sans boucle.
 def cart_to_geo_directe(X, Y, Z, a, b):
-    # On a besoin de e² et de l'aplatissement f = (a - b) / a.
+    # J'ai besoin de e² et de l'aplatissement f = (a - b) / a.
     e2, f = e2_of(a, b), (a - b) / a
-    # p = distance du point à l'axe des pôles (on regarde la Terre de dessus).
-    # r = distance du point au centre de la Terre.
+    # p = distance entre le point et l'axe des pôles (comme si je regardais la Terre de dessus).
+    # r = distance entre le point et le centre de la Terre.
     p, r = math.hypot(X, Y), math.sqrt(X * X + Y * Y + Z * Z)
-    # µ est un angle intermédiaire : c'est déjà une très bonne estimation de la latitude.
-    # On s'en sert uniquement pour calculer φ proprement juste après.
+    # µ est un angle intermédiaire. C'est déjà une très bonne estimation de la latitude, je m'en
+    # sers seulement pour calculer φ correctement à la ligne suivante.
     mu = math.atan((Z / p) * ((1 - f) + a * e2 / r))
-    # Grâce à µ, on obtient la latitude géodésique φ directement.
+    # Avec µ, j'obtiens la latitude géodésique φ en un seul calcul.
     phi = math.atan((Z * (1 - f) + e2 * a * math.sin(mu) ** 3)
                     / ((1 - f) * (p - e2 * a * math.cos(mu) ** 3)))
-    # Maintenant que φ est connue, on en déduit la hauteur h au-dessus de l'ellipsoïde.
-    # Quant à la longitude, c'est juste atan2(Y, X) : on utilise atan2 plutôt que arctan(Y/X)
-    # pour que les signes de X et de Y donnent automatiquement le bon quadrant.
+    # Maintenant que je connais φ, je peux trouver la hauteur h au-dessus de l'ellipsoïde.
+    # La longitude, elle, est simple : atan2(Y, X). J'utilise atan2 plutôt que arctan(Y/X) parce
+    # qu'il tient compte des signes de X et Y et donne tout de suite le bon quadrant.
     h = p * math.cos(phi) + Z * math.sin(phi) - a * math.sqrt(1 - e2 * math.sin(phi) ** 2)
     return phi, math.atan2(Y, X), h
 
 
-# Conversion ② - méthode itérative : on part d'une valeur approximative de φ, puis on
-# l'améliore en boucle jusqu'à ce qu'elle ne bouge presque plus. C'est plus facile à
-# comprendre que la formule directe, on voit la valeur se stabiliser.
+# CONVERSION ② (méthode itérative) : je pars d'une valeur approchée de φ et je l'améliore
+# à chaque tour de boucle, jusqu'à ce qu'elle ne bouge presque plus.
+# Je la trouve plus facile à comprendre que la formule directe, car on voit φ se stabiliser.
 def cart_to_geo_iterative(X, Y, Z, a, b, eps=1e-12):
     e2 = e2_of(a, b)
     p = math.hypot(X, Y)
-    # Premier essai : on fait comme si le point était sur une sphère, en oubliant h.
+    # Premier essai : je fais comme si le point était sur une sphère et j'oublie h.
     # Ce n'est pas exact, mais c'est un bon point de départ.
     phi = math.atan2(Z, p)
-    # Avec ce premier φ, on calcule N puis une première valeur de h (même fausse, ça suffit
-    # pour pouvoir démarrer la boucle).
+    # Avec ce premier φ, je calcule N et une première valeur de h (même fausse, ça me suffit
+    # pour démarrer la boucle).
     N = N_of(phi, a, e2)
     h = p / math.cos(phi) - N
-    # On répète au maximum 50 fois, mais en pratique 4 ou 5 tours suffisent.
+    # Je répète 50 fois au maximum, mais en vrai 4 ou 5 tours suffisent.
     for _ in range(50):
-        # On recalcule φ en tenant compte du N et du h qu'on vient de trouver : c'est la correction.
+        # Je recalcule φ en utilisant le N et le h que je viens de trouver : c'est la correction.
         new = math.atan((Z / p) / (1 - e2 * N / (N + h)))
-        # On met N et h à jour avec le nouveau φ, pour le tour suivant.
+        # Je mets à jour N et h avec ce nouveau φ, pour le tour suivant.
         N = N_of(new, a, e2)
         h = p / math.cos(new) - N
-        # On regarde de combien φ a changé. Si le changement est minuscule (moins de eps),
-        # on considère que la valeur est stable et on arrête la boucle.
+        # Je regarde de combien φ a changé. Si c'est minuscule (moins de eps), je considère que la
+        # valeur est stable et j'arrête la boucle.
         done = abs(new - phi) < eps * max(abs(new), 1e-12)
         phi = new
         if done:
@@ -113,27 +113,27 @@ def cart_to_geo_iterative(X, Y, Z, a, b, eps=1e-12):
 
 
 # Cette fonction lit un angle tapé par l'utilisateur. Il peut l'écrire en degrés décimaux
-# (35.7595) ou en degrés-minutes-secondes (35 45 34.2 N). Elle renvoie toujours des
-# degrés décimaux.
+# (35.7595) ou en degrés-minutes-secondes (35 45 34.2 N). Elle renvoie toujours des degrés
+# décimaux.
 def parse_angle(txt):
     """Décimal (35.7595) ou DMS (35 45 34.2 N, 5°50'01"W)."""
     s = txt.strip().upper().replace(",", ".")
-    # Les lettres S (sud), W (ouest) ou O (ouest en français) veulent dire que l'angle est négatif.
+    # S (sud), W (ouest) ou O (ouest en français) veulent dire que l'angle est négatif.
     neg = bool(re.search(r"[SWO]", s))
-    # On récupère les nombres écrits dans le texte : un seul (décimal) ou trois (degrés,
-    # minutes, secondes).
+    # Je récupère les nombres écrits dans le texte : un seul si c'est décimal, trois si c'est
+    # degrés, minutes, secondes.
     nums = re.findall(r"[-+]?\d+(?:\.\d+)?", re.sub(r"[NSEWO]", " ", s))
     if not 1 <= len(nums) <= 3:
         raise ValueError(f"angle illisible : « {txt} »")
     neg = neg or nums[0].startswith("-")
-    # Conversion en degrés décimaux : degrés + minutes/60 + secondes/3600.
-    # (Le diviseur 60**i vaut 1, puis 60, puis 3600, selon la position du nombre.)
+    # Je passe en degrés décimaux : degrés + minutes/60 + secondes/3600.
+    # (Le diviseur 60**i vaut 1, puis 60, puis 3600, selon la place du nombre.)
     v = sum(abs(float(n)) / 60 ** i for i, n in enumerate(nums))
     return -v if neg else v
 
 
-# L'inverse : on prend des degrés décimaux et on les transforme en degrés, minutes,
-# secondes, pour un affichage plus lisible.
+# Le contraire : je transforme des degrés décimaux en degrés, minutes, secondes pour que
+# l'affichage soit plus lisible.
 def dms(x):
     sg, x = ("-" if x < 0 else ""), abs(x)
     d = int(x)
@@ -142,9 +142,8 @@ def dms(x):
 
 
 # ====================================================================== continents (contours simplifiés lon, lat)
-# Pour dessiner la Terre, on a noté à la main des contours très simplifiés des continents
-# (des listes de points longitude, latitude). Ce n'est pas précis du tout : c'est juste
-# pour se repérer visuellement sur le globe.
+# Pour dessiner la Terre, j'ai noté à la main des contours très simplifiés des continents
+# (des points longitude, latitude). Ce n'est pas précis du tout, c'est juste pour se repérer.
 CONTINENTS = [
     # Afrique
     [(-17, 21), (-13, 28), (-9.5, 32), (-6, 35.8), (-2, 35), (3, 36.8), (10, 37.2), (11, 33), (15, 32),
@@ -190,9 +189,9 @@ CONTINENTS = [
 ]
 
 
-# Petite fonction qui répond à la question : ce point est-il à l'intérieur de ce contour ?
-# Astuce classique : on trace une droite horizontale à partir du point et on compte
-# combien de fois elle coupe le contour. Nombre impair = dedans, nombre pair = dehors.
+# Cette fonction répond à : « ce point est-il dans ce contour ? ». L'astuce : je trace une
+# droite horizontale depuis le point et je compte combien de fois elle coupe le contour.
+# Nombre impair = dedans, nombre pair = dehors.
 def _inside(lon, lat, poly):
     ins, j = False, len(poly) - 1
     for i in range(len(poly)):
@@ -204,20 +203,20 @@ def _inside(lon, lat, poly):
     return ins
 
 
-# On quadrille toute la Terre avec des points régulièrement espacés, et on garde seulement
-# ceux qui tombent sur un continent. Ce sont ces points qu'on affichera sur le globe.
+# Je quadrille toute la Terre avec des points régulièrement espacés et je garde seulement
+# ceux qui tombent sur un continent. Ce sont eux que j'affiche sur le globe.
 def build_land_dots(step=2.2):
     """Grille régulière de points terrestres (vecteurs unitaires)."""
     dots = []
     lat = -88.0
     while lat <= 88:
-        # Plus on s'approche des pôles, plus les méridiens se rapprochent. On met donc moins de
-        # points sur les hautes latitudes pour que l'espacement reste régulier.
+        # Près des pôles les méridiens se rapprochent, donc je mets moins de points sur les hautes
+        # latitudes, sinon ils seraient tous collés.
         n = max(1, int(360 / step * math.cos(math.radians(lat))))
         for i in range(n):
             lon = -180 + 360 * (i + 0.5) / n
-            # Un point est « sur terre » s'il est dans un continent, ou en Antarctique (au sud de 72°,
-            # qu'on n'a pas dessiné en détail).
+            # Un point est sur terre s'il est dans un continent, ou en Antarctique (au sud de 72°, que je
+            # n'ai pas dessiné en détail).
             if lat < -72 or any(_inside(lon, lat, p) for p in CONTINENTS):
                 la, lo = math.radians(lat), math.radians(lon)
                 dots.append((math.cos(la) * math.cos(lo), math.cos(la) * math.sin(lo), math.sin(la)))
@@ -229,7 +228,7 @@ def build_land_dots(step=2.2):
 # ----------------------------------------------------------------------
 # Thèmes de couleurs. Pour changer l'apparence du programme, il suffit de modifier
 # THEME juste en dessous, ou de lancer le programme avec le nom du thème :
-#     python conversion_geodesique_commente.py clair
+#     python mon_fichier.py clair
 # Thèmes disponibles : sombre, clair, foret, violet, chaud, ocean
 # Chaque thème donne une couleur à tous les éléments : fond, cartes, champs, texte,
 # couleur d'accent, globe, axes X Y Z, quadrillage, etc.
@@ -290,21 +289,21 @@ if len(sys.argv) > 1 and sys.argv[1] in THEMES:   # ou celui donné en argument
 globals().update(THEMES[THEME])                   # BG, CARD, FG, ACC... deviennent des variables
 
 
-# Mélange deux couleurs. Avec t = 0 on garde la première, avec t = 1 la seconde, et entre
-# les deux on obtient un dégradé. Pratique pour les halos et les effets de fondu.
+# Mélange deux couleurs : avec t = 0 j'ai la première, avec t = 1 la seconde, et entre les
+# deux un dégradé. Je m'en sers pour les halos et les effets de fondu.
 def blend(c1, c2, t):
     a = [int(c1[i:i + 2], 16) for i in (1, 3, 5)]
     b = [int(c2[i:i + 2], 16) for i in (1, 3, 5)]
     return "#%02x%02x%02x" % tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-# On prépare 12 nuances à l'avance : les points au centre du globe sont plus clairs, ceux
-# des bords plus sombres, ce qui donne un effet de relief.
+# Je prépare 12 nuances à l'avance : les points au centre du globe sont plus clairs, ceux
+# des bords plus sombres, ça donne un petit effet de relief.
 LAND_SHADES = [blend(LAND_LO, LAND_HI, i / 11) for i in range(12)]
 
 
-# La classe App est la fenêtre du programme : à gauche on saisit et on calcule, à droite
-# on voit le résultat.
+# La classe App est la fenêtre du programme : à gauche je saisis et je calcule, à droite je
+# vois le résultat dessiné.
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -315,23 +314,24 @@ class App(tk.Tk):
         self.var_meth = tk.StringVar(value="Itérative")
 
         # état du globe
-        # --- Ce qui sert à la visualisation ---
+        # --- Tout ce qui sert au dessin ---
         self.land = build_land_dots()
-        # Chaque conversion ajoute un point à cette liste (latitude et longitude en radians, et une
-        # couleur). À côté, on garde aussi h et X, Y, Z pour pouvoir les afficher sur le schéma.
+        # À chaque conversion j'ajoute un point à cette liste (latitude, longitude en radians et une
+        # couleur). Je garde aussi h et X, Y, Z à côté, pour les afficher sur le schéma.
         self.points = []            # (phi, lam, couleur)
         self.hs, self.xyz = [], []
-        # Ces deux nombres décrivent comment on regarde le globe : spin = on le fait tourner
-        # autour de l'axe des pôles, tilt = on l'incline vers nous ou vers l'arrière.
+        # Ces deux nombres disent comment je regarde le globe : spin = je le fais tourner autour de
+        # l'axe des pôles, tilt = je l'incline vers moi ou vers l'arrière.
         self.spin, self.tilt = random.uniform(0, 6.28), 0.3
         # follow = la vue se tourne toute seule vers le point choisi.
-        # dragging = on est en train de faire glisser la souris.
+        # dragging = je suis en train de tirer le globe avec la souris.
         self.follow, self.dragging = False, False
         self.focus = None
         self._last = (0, 0)
         self.cw = self.ch = 440
         self.born = 0.0
 
+        # Je règle le style des listes déroulantes pour qu'elles aient les mêmes couleurs que le reste.
         st = ttk.Style(self)
         st.theme_use("clam")
         st.configure("TCombobox", fieldbackground=FIELD, background=CARD, foreground=FG,
@@ -341,6 +341,7 @@ class App(tk.Tk):
         self.option_add("*TCombobox*Listbox.foreground", FG)
 
         # ellipsoïde
+        # Barre du haut : c'est là que je choisis l'ellipsoïde et que je vois ses valeurs a et b.
         top = tk.Frame(self, bg=BG)
         top.pack(fill="x", pady=(0, 12))
         tk.Label(top, text="Ellipsoïde", bg=BG, fg=MUTED).pack(side="left")
@@ -363,6 +364,7 @@ class App(tk.Tk):
         right.pack(side="left", anchor="n", padx=(12, 0))
 
         # bloc 1
+        # Bloc ① : je tape φ, λ, h et j'obtiens X, Y, Z.
         c1 = self.card(left, "①  (φ, λ, h)  →  (X, Y, Z)")
         c1.pack(side="left", padx=(0, 10), anchor="n")
         self.phi = self.field(c1, "φ  (°)", self.calc1)
@@ -376,6 +378,7 @@ class App(tk.Tk):
                  font=("Segoe UI", 8)).pack(anchor="w", pady=(6, 0))
 
         # bloc 2
+        # Bloc ② : je tape X, Y, Z et j'obtiens φ, λ, h (avec la méthode choisie).
         c2 = self.card(left, "②  (X, Y, Z)  →  (φ, λ, h)")
         c2.pack(side="left", anchor="n")
         self.iX = self.field(c2, "X  (m)", self.calc2)
@@ -395,6 +398,7 @@ class App(tk.Tk):
         self.dms_lbl.pack(anchor="w", pady=(6, 0))
 
         # ---- globe
+        # À droite : la partie dessin (schéma ou Terre) et la liste des points convertis.
         gf = tk.Frame(right, bg=CARD, highlightbackground=LINE, highlightthickness=1)
         gf.pack()
         self.mode = tk.StringVar(value="schema")
@@ -411,12 +415,14 @@ class App(tk.Tk):
                        highlightthickness=0).pack(side="left", padx=(10, 4))
         ttk.Combobox(mb, textvariable=self.var_pas, values=["10°", "15°", "30°"], width=4,
                      state="readonly").pack(side="left")
+        # Le canvas est la zone où je dessine.
         self.canvas = tk.Canvas(gf, width=440, height=440, bg=SPACE, highlightthickness=0,
                                 cursor="fleur")
         self.canvas.pack()
         self.canvas.bind("<ButtonPress-1>", self._press)
         self.canvas.bind("<B1-Motion>", self._drag)
         self.canvas.bind("<ButtonRelease-1>", lambda e: setattr(self, "dragging", False))
+        # Je sème quelques étoiles au hasard dans le fond. C'est juste pour la déco.
         for x, y, s in [(random.random(), random.random(), random.random()) for _ in range(70)]:
             r = 0.6 + s
             self.canvas.create_oval(x * 440 - r, y * 440 - r, x * 440 + r, y * 440 + r,
@@ -427,6 +433,7 @@ class App(tk.Tk):
                  font=("Segoe UI", 10, "bold")).pack(side="left")
         tk.Button(bar, text="Effacer", command=self.effacer, bg=CARD, fg=MUTED, relief="flat",
                   bd=0, cursor="hand2", activebackground=CARD).pack(side="right")
+        # La liste où s'écrivent les points déjà convertis.
         self.lb = tk.Listbox(gf, height=5, bg=FIELD, fg=FG, relief="flat", bd=0,
                              font=("Consolas", 9), selectbackground=SEL, selectforeground=FG,
                              highlightthickness=0, activestyle="none")
@@ -436,11 +443,12 @@ class App(tk.Tk):
         self.status = tk.Label(self, text="", bg=BG, fg=MUTED, anchor="w")
         self.status.pack(fill="x", pady=(10, 0))
         self.maj_ell()
+        # Je lance l'animation.
         self.tick()
 
     # ------------------------------------------------------------ helpers graphiques
-    # --- Petites fonctions qui évitent de répéter le même code pour créer les champs, les
-    # boutons, etc. ---
+    # --- Petites fonctions pour ne pas répéter le même code à chaque fois que je crée un champ,
+    # un bouton, etc. ---
     def entry(self, parent, width, var=None):
         return tk.Entry(parent, width=width, textvariable=var, bg=FIELD, fg=FG, relief="flat",
                         insertbackground=ACC, font=("Consolas", 11), highlightthickness=1,
@@ -488,8 +496,8 @@ class App(tk.Tk):
         self.status.config(text=("✔ " if ok else "✖ ") + msg, fg=OK if ok else ERR)
 
     # ------------------------------------------------------------ logique
-    # Quand on change d'ellipsoïde dans la liste, on affiche ses valeurs a et b. On ne peut
-    # les modifier à la main que si on choisit « Personnalisé ».
+    # Quand je change d'ellipsoïde dans la liste, j'affiche ses valeurs a et b. Je ne peux les
+    # modifier à la main que si je choisis « Personnalisé ».
     def maj_ell(self):
         nom = self.var_ell.get()
         if nom in ELLIPSOIDES:
@@ -502,8 +510,7 @@ class App(tk.Tk):
             for e in (self.e_a, self.e_b):
                 e.config(state="normal", fg=FG)
 
-    # On lit a et b et on vérifie qu'ils ont un sens (a doit être plus grand que b, et tous
-    # les deux positifs).
+    # Je lis a et b et je vérifie qu'ils ont un sens (a plus grand que b, et les deux positifs).
     def ab(self):
         try:
             a = float(self.var_a.get().replace(",", "."))
@@ -521,8 +528,8 @@ class App(tk.Tk):
         except ValueError:
             raise ValueError("valeur numérique invalide")
 
-    # Bouton du bloc ① : on lit φ, λ et h, on calcule X, Y, Z, on les affiche, et on ajoute
-    # le point sur le globe.
+    # Bouton du bloc ① : je lis φ, λ, h, je calcule X, Y, Z, je les affiche et j'ajoute le point
+    # sur le dessin.
     def calc1(self):
         try:
             a, b = self.ab()
@@ -530,7 +537,7 @@ class App(tk.Tk):
             h = self.num(self.h)
             if abs(phi) > 90 or abs(lam) > 180:
                 raise ValueError("φ ∈ [-90°, 90°] et λ ∈ [-180°, 180°]")
-            # L'utilisateur tape des degrés, mais les formules attendent des radians : on convertit.
+            # L'utilisateur tape des degrés mais mes formules veulent des radians : je convertis.
             X, Y, Z = geo_to_cart(math.radians(phi), math.radians(lam), h, a, b)
         except ValueError as err:
             return self.say(f"① {err}", False)
@@ -539,18 +546,17 @@ class App(tk.Tk):
         self.ajouter_point(math.radians(phi), math.radians(lam), "①", h, (X, Y, Z))
         self.say("Conversion ① effectuée.")
 
-    # Bouton du bloc ② : on lit X, Y, Z, on calcule φ, λ et h avec la méthode choisie, on les
-    # affiche, et on ajoute le point.
+    # Bouton du bloc ② : je lis X, Y, Z, je calcule φ, λ, h avec la méthode choisie, je les
+    # affiche et j'ajoute le point.
     def calc2(self):
         try:
             a, b = self.ab()
             X, Y, Z = self.num(self.iX), self.num(self.iY), self.num(self.iZ)
-            # Si X et Y valent 0, le point est exactement sur l'axe des pôles : la longitude n'a plus
-            # de sens. On refuse ce cas et on affiche un message.
+            # Si X et Y valent 0, le point est pile sur l'axe des pôles et la longitude n'a plus de sens.
+            # Je refuse ce cas avec un message.
             if math.hypot(X, Y) < 1e-6:
                 raise ValueError("cas des pôles (X = Y = 0) non traité")
-            # On choisit la fonction à utiliser selon ce que l'utilisateur a sélectionné : directe ou
-            # itérative.
+            # Je choisis la fonction selon la méthode sélectionnée : directe ou itérative.
             f = cart_to_geo_directe if self.var_meth.get() == "Directe" else cart_to_geo_iterative
             phi, lam, h = f(X, Y, Z, a, b)
         except ValueError as err:
@@ -564,8 +570,8 @@ class App(tk.Tk):
         self.say("Conversion ② effectuée.")
 
     # ------------------------------------------------------------ points sur la Terre
-    # On enregistre le point converti : on lui donne une couleur, on l'ajoute à la liste
-    # affichée sous le globe, et on tourne la vue vers lui.
+    # J'enregistre le point converti : je lui donne une couleur, je l'ajoute à la liste sous le
+    # dessin, et je tourne la vue vers lui.
     def ajouter_point(self, phi, lam, op, h=0.0, xyz=(0.0, 0.0, 0.0)):
         col = PALETTE[len(self.points) % len(PALETTE)]
         self.points.append((phi, lam, col))
@@ -577,7 +583,7 @@ class App(tk.Tk):
         self.lb.see("end")
         self.focus, self.follow, self.born = n - 1, True, time.time()
 
-    # On vide la liste et on enlève les points du globe.
+    # Je vide la liste et j'enlève les points du dessin.
     def effacer(self):
         self.points.clear()
         self.hs.clear()
@@ -585,19 +591,19 @@ class App(tk.Tk):
         self.lb.delete(0, "end")
         self.focus, self.follow = None, False
 
-    # Quand on clique sur une ligne de la liste, la vue se tourne vers ce point.
+    # Quand je clique sur une ligne de la liste, la vue se tourne vers ce point.
     def _select(self, ev):
         s = self.lb.curselection()
         if s:
             self.focus, self.follow, self.born = s[0], True, time.time()
 
-    # On vient d'appuyer sur la souris : on arrête le suivi automatique pour laisser
-    # l'utilisateur tourner le globe lui-même.
+    # Je viens d'appuyer sur la souris : j'arrête le suivi automatique pour pouvoir tourner le
+    # globe moi-même.
     def _press(self, ev):
         self.dragging, self._last, self.follow = True, (ev.x, ev.y), False
 
-    # Quand on déplace la souris en gardant le bouton appuyé, le globe tourne : de gauche à
-    # droite autour de l'axe des pôles, de haut en bas il s'incline.
+    # Quand je bouge la souris en gardant le bouton appuyé, le globe tourne : de gauche à droite
+    # autour de l'axe des pôles, de haut en bas il s'incline.
     def _drag(self, ev):
         dx, dy = ev.x - self._last[0], ev.y - self._last[1]
         self._last = (ev.x, ev.y)
@@ -605,23 +611,22 @@ class App(tk.Tk):
         self.tilt = max(-1.4, min(1.4, self.tilt + dy * 0.01))
 
     # ------------------------------------------------------------ dessin du globe
-    # On calcule une seule fois par image les cosinus et sinus de la rotation, pour ne pas les
-    # recalculer à chaque point.
+    # Je calcule une seule fois par image les cosinus et sinus de la rotation, pour ne pas les
+    # refaire à chaque point.
     def _rot(self):
         return (math.cos(self.spin), math.sin(self.spin), math.cos(self.tilt), math.sin(self.tilt))
 
     @staticmethod
-    # Cette fonction transforme un point 3D en position sur l'écran (2D). On fait d'abord
-    # tourner le point autour de l'axe Z, puis on l'incline, puis on garde x et z comme position
-    # à l'écran. La troisième valeur (la profondeur) sert à savoir si le point est devant le
-    # globe (y2 < 0) ou derrière.
+    # Cette fonction transforme un point 3D en position sur l'écran (2D). Je fais d'abord tourner
+    # le point autour de l'axe Z, puis je l'incline, puis je garde x et z comme position à l'écran.
+    # La 3e valeur (la profondeur) me dit si le point est devant le globe (y2 < 0) ou derrière.
     def _proj(x, y, z, r, k, cx, cy):
         cs, sn, ct, st = r
         xp, yp = x * cs - y * sn, x * sn + y * cs
         return cx + k * xp, cy - k * (yp * st + z * ct), yp * ct - z * st
 
-    # On trace une ligne en ne gardant que la partie visible, c'est-à-dire celle qui est sur
-    # la face du globe tournée vers nous.
+    # Je trace une ligne en gardant seulement la partie visible, celle qui est sur la face du
+    # globe tournée vers nous.
     def _lines(self, c, pts_list, front_col, back_col, wf=1):
         for pts in pts_list:
             cur, vis = [], None
@@ -639,11 +644,11 @@ class App(tk.Tk):
             if len(cur) > 1 and vis:
                 c.create_line(*[q for p in cur for q in p], fill=front_col, width=wf, tags="fx")
 
-    # On redessine la vue choisie : schéma géodésique ou Terre.
+    # Je redessine la vue choisie : schéma géodésique ou Terre.
     def draw(self):
         (self.draw_schema if self.mode.get() == "schema" else self.draw_terre)()
 
-    # Le schéma « pédagogique » : pour un point P, il montre l'ellipsoïde, les axes X Y Z, la
+    # Le schéma pour comprendre : pour un point P, il montre l'ellipsoïde, les axes X Y Z, la
     # normale, les angles φ et λ, la hauteur h et les projections de P sur les axes.
     def draw_schema(self):
         """Schéma pédagogique : P, normale, h, φ, λ, axes X Y Z et projections."""
@@ -662,26 +667,26 @@ class App(tk.Tk):
         except ValueError:
             return
         f = (a - b) / a
-        # Pour le dessin, on prend un ellipsoïde de rayon 1 et on exagère son aplatissement ×40,
-        # sinon on ne verrait pas qu'il est aplati (il ne l'est que de 0,3 %).
+        # Pour le dessin je prends un ellipsoïde de rayon 1 et j'exagère son aplatissement ×40, sinon
+        # on ne verrait pas qu'il est aplati (il ne l'est que de 0,3 %).
         # Attention : seul le dessin est exagéré, les nombres affichés sont exacts.
         bd = max(0.4, 1 - 40 * f)                       # aplatissement exagéré x40
         e2d = 1 - bd * bd
         # Le même N que plus haut, mais pour l'ellipsoïde dessiné.
         Nd = 1 / math.sqrt(1 - e2d * math.sin(phi) ** 2)
-        # La normale en P : c'est la direction « perpendiculaire à la surface ». On l'écrit avec
-        # φ et λ.
+        # La normale en P : la direction perpendiculaire à la surface, écrite avec φ et λ.
         n = (math.cos(phi) * math.cos(lam), math.cos(phi) * math.sin(lam), math.sin(phi))
-        # P0 = le point à la surface de l'ellipsoïde (c'est la conversion ① avec h = 0).
+        # P0 = le point sur la surface de l'ellipsoïde (c'est la conversion ① avec h = 0).
         P0 = tuple(Nd * n[j] * ((1 - e2d) if j == 2 else 1) for j in range(3))
-        # P = P0 décalé le long de la normale de la hauteur h. Sur le dessin on prend toujours la
-        # même petite longueur, sinon h ne serait pas visible.
+        # P = P0 décalé le long de la normale de la hauteur h. Sur le dessin je prends toujours la
+        # même petite longueur, sinon h serait invisible.
         P = tuple(P0[j] + 0.16 * n[j] for j in range(3))
         r = self._rot()
         pr = lambda v: self._proj(v[0], v[1], v[2], r, k, cx, cy)
         WIRE, BACK, CX, CY, CZ = GRID, GRID_BACK, AX_X, AX_Y, AX_Z
         GREY = GUIDE
 
+        # Petite aide : trace une ligne brisée, en distinguant la partie devant et la partie derrière.
         def seg(pts, fc, bc, wf=1.0, only=None):
             prev = None
             for q in pts:
@@ -693,40 +698,47 @@ class App(tk.Tk):
                                       width=wf if fr else 1, tags="fx")
                 prev = q
 
+        # Petite aide : trace un segment entre deux points 3D.
         def ln(p1, p2, colr, wd=1.0, dash=None):
             A, B = pr(p1), pr(p2)
             c.create_line(A[0], A[1], B[0], B[1], fill=colr, width=wd, dash=dash, tags="fx")
 
+        # Petite aide : écrit un texte à côté d'un point 3D.
         def tx(t, v, colr, dx=6, dy=-6, size=10):
             A = pr(v)
             c.create_text(A[0] + dx, A[1] + dy, text=t, fill=colr, anchor="w",
                           font=("Segoe UI", size, "bold"), tags="fx")
 
+        # mer(L) = un méridien (ligne de longitude), fait de plein de petits points.
         mer = lambda L: [(math.cos(math.radians(t)) * math.cos(L), math.cos(math.radians(t)) * math.sin(L),
                           bd * math.sin(math.radians(t))) for t in range(-90, 91, 4)]
+        # par(t) = un parallèle (ligne de latitude).
         par = lambda t: [(math.cos(math.radians(t)) * math.cos(math.radians(L)),
                           math.cos(math.radians(t)) * math.sin(math.radians(L)),
                           bd * math.sin(math.radians(t))) for L in range(0, 361, 5)]
         c.create_oval(cx - k, cy - k * math.sqrt((bd * math.cos(self.tilt)) ** 2 + math.sin(self.tilt) ** 2),
                       cx + k, cy + k * math.sqrt((bd * math.cos(self.tilt)) ** 2 + math.sin(self.tilt) ** 2),
                       fill=DISK, outline=DISK_EDGE, tags="fx")
+        # Le pas du quadrillage choisi par l'utilisateur : 10°, 15° ou 30°.
         st = int(self.var_pas.get().rstrip("°"))
         grid = ([mer(math.radians(L)) for L in range(0, 360, st)]
                 + [par(t) for t in range(-90 + st, 90, st)]) if self.var_grid.get() else []
         for g in grid:
             seg(g, WIRE, BACK, only=False)
+        # Les trois axes X, Y, Z, chacun avec sa couleur.
         for ax, ay, az, t, cc in ((1.38, 0, 0, "X", CX), (0, 1.38, 0, "Y", CY), (0, 0, 1.3, "Z", CZ)):
             ln((0, 0, 0), (ax, ay, az), cc, 1.6)
             tx(t, (ax * 1.05, ay * 1.05, az * 1.05), cc, 3, 3, 12)
         for g in grid:
             seg(g, WIRE, BACK, only=True)
+        # L'équateur.
         seg(par(0), ACC, ACC, 2, only=True)
         seg(mer(lam), HILITE, HILITE, 2.2)                         # méridien de P
         seg([(math.cos(t * lam / 90), math.sin(t * lam / 90), 0) for t in range(91)], ACC, ACC, 3)  # arc λ
         tx("λ", (.55 * math.cos(lam / 2), .55 * math.sin(lam / 2), 0), ACC, 0, -6, 12)
         # normale, φ, h
-        # Point intéressant : la normale ne passe pas par le centre de la Terre ! Elle coupe l'axe
-        # des pôles un peu plus bas, à z = -N·e²·sin φ. C'est de ce point qu'on dessine l'angle φ.
+        # Point intéressant : la normale ne passe pas par le centre de la Terre ! Elle coupe l'axe des
+        # pôles un peu plus bas, à z = -N·e²·sin φ. C'est de ce point que je dessine l'angle φ.
         ez = -Nd * e2d * math.sin(phi)
         A0, u = (0, 0, ez), (math.cos(lam), math.sin(lam), 0)
         ln(A0, P, HILITE, 2)
@@ -739,7 +751,7 @@ class App(tk.Tk):
         ln((0, 0, 0), P0, GREY, 1.3, (5, 4))
         tx("ψ", tuple(.35 * v for v in P0), GREY, 4, -4, 11)
         # projections de P sur les axes
-        # Les pointillés montrent comment on « lit » X, Y et Z : on descend de P jusqu'au plan de
+        # Les pointillés montrent comment on lit X, Y et Z : on descend de P jusqu'au plan de
         # l'équateur, puis on rejoint chaque axe.
         pe = (P0[0], P0[1], 0)
         ln(P0, pe, GREY, 1, (2, 3))
@@ -751,7 +763,7 @@ class App(tk.Tk):
         tx(f"Z={Z:,.0f}".replace(",", " "), (0, 0, P0[2]), CZ, -80, -4, 9)
         # point P
         px, py, _ = pr(P)
-        # Petit effet visuel : le marqueur de P grossit et rétrécit en continu (sinus entre 0 et 1).
+        # Petit effet visuel : le marqueur de P grossit et rétrécit en continu.
         pulse = 0.5 + 0.5 * math.sin((time.time() - self.born) * 5)
         c.create_oval(px - 7 - 5 * pulse, py - 7 - 5 * pulse, px + 7 + 5 * pulse, py + 7 + 5 * pulse,
                       outline=blend(DISK, col, 0.7 * (1 - pulse)), width=2, tags="fx")
@@ -778,9 +790,9 @@ class App(tk.Tk):
 
         # continents (points)
         cs, sn, ct, st = r
-        # On parcourt tous les points de terre. Chacun est une direction (un vecteur de longueur 1).
-        # On applique la même rotation que dans _proj, mais directement ici pour aller plus vite.
-        # Si le point est devant (y2 < 0), on le dessine : plus il est au centre, plus il est clair.
+        # Je parcours tous les points de terre. Chacun est une direction (un vecteur de longueur 1).
+        # J'applique la même rotation que dans _proj, mais directement ici pour aller plus vite.
+        # Si le point est devant (y2 < 0) je le dessine : plus il est au centre, plus il est clair.
         for x, y, z in self.land:
             yp = x * sn + y * cs
             y2 = yp * ct - z * st
@@ -855,24 +867,60 @@ class App(tk.Tk):
                       text="Glisser pour faire tourner  ·  équateur en turquoise", tags="fx")
 
     # Cette fonction tourne en boucle (environ 30 fois par seconde) : elle met à jour
-    # l'orientation du globe puis le redessine. C'est ce qui donne l'animation.
+    # l'orientation du globe puis le redessine. C'est ça qui crée l'animation.
     def tick(self):
         if self.follow and self.focus is not None and not self.dragging and self.points:
             phi, lam, _ = self.points[self.focus]
-            # On tourne le globe pour que la longitude du point arrive face à nous. Dans le schéma on
-            # ajoute 1 radian de plus pour avoir une vue de biais, plus lisible.
+            # Je tourne le globe pour que la longitude du point arrive face à moi. Dans le schéma, j'ajoute
+            # 1 radian pour avoir une vue de biais, plus lisible.
             schema = self.mode.get() == "schema"
             target = -math.pi / 2 - lam + (1.0 if schema else 0.0)   # schéma : vue oblique
             d = (target - self.spin + math.pi) % (2 * math.pi) - math.pi
             self.spin += d * 0.10
             tt = 0.45 if schema else max(-0.3, min(1.1, 0.3 + 0.5 * phi))
             self.tilt += (tt - self.tilt) * 0.08
-        # S'il n'y a encore aucun point, on laisse le globe tourner doucement tout seul.
+        # Tant qu'il n'y a aucun point, je laisse le globe tourner doucement tout seul.
         elif not self.points and not self.dragging:
             self.spin += 0.006          # rotation lente tant qu'aucun point n'existe
         self.draw()
         self.after(33, self.tick)
 
 
+# ======================================================================
+# TEST UNITAIRE : le point Merchich
+# Pour le lancer :   python conversion_geodesique_avec_tests.py --test
+# Le but : vérifier que mes deux conversions sont justes sur un point connu, avec
+# l'ellipsoïde Clarke 1880 (celui de Merchich).
+# ======================================================================
+class TestPointMerchich(unittest.TestCase):
+    # Mon point de test : φ et λ en degrés, h en mètres, et les X, Y, Z que je dois retrouver
+    # (en mètres, arrondis au millimètre). Je les ai recoupés avec une autre formule pour être
+    # sûr de moi. Pour tester le point donné par le professeur, il suffit de changer ces 6 nombres.
+    PHI, LAM, H = 35.7595, -5.8337, 60.0
+    X, Y, Z = 5155038.651, -526693.268, 3706332.466
+
+    def test_point_merchich(self):
+        a, b = ELLIPSOIDES["Clarke 1880 (Merchich)"]
+
+        # Étape 1 : je pars de (φ, λ, h), je calcule (X, Y, Z) et je compare avec ce que
+        # j'attends. J'accepte 1 mm d'écart (à cause des valeurs arrondies).
+        x, y, z = geo_to_cart(math.radians(self.PHI), math.radians(self.LAM), self.H, a, b)
+        self.assertAlmostEqual(x, self.X, delta=0.001)
+        self.assertAlmostEqual(y, self.Y, delta=0.001)
+        self.assertAlmostEqual(z, self.Z, delta=0.001)
+
+        # Étape 2 : je fais le chemin inverse avec mes deux méthodes (directe et itérative) et
+        # je dois retrouver φ, λ et h de départ.
+        for methode in (cart_to_geo_directe, cart_to_geo_iterative):
+            phi, lam, h = methode(self.X, self.Y, self.Z, a, b)
+            self.assertAlmostEqual(math.degrees(phi), self.PHI, places=7)
+            self.assertAlmostEqual(math.degrees(lam), self.LAM, places=7)
+            self.assertAlmostEqual(h, self.H, delta=0.005)
+
+
 if __name__ == "__main__":
-    App().mainloop()
+    # Si je lance le fichier avec --test, ça exécute le test ; sinon ça ouvre l'application.
+    if "--test" in sys.argv:
+        unittest.main(argv=[sys.argv[0], "-v"])
+    else:
+        App().mainloop()
