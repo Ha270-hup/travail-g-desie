@@ -45,7 +45,7 @@ On reprend les valeurs X, Y, Z obtenues précédemment, avec la méthode itérat
 - Affichage du résultat en décimal et en DMS
 - Liste des points convertis, cliquable pour recentrer la vue
 - Grille latitude / longitude avec pas réglable (10°, 15°, 30°)
-- 6 thèmes de couleurs : `sombre`, `clair`, `foret`, `violet`, `chaud`, `ocean`
+
 
 
 
