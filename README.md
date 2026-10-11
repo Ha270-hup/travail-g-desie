@@ -21,23 +21,7 @@ Chaque point converti est affiché :
 - Grille latitude / longitude avec pas réglable (10°, 15°, 30°)
 - 6 thèmes de couleurs : `sombre`, `clair`, `foret`, `violet`, `chaud`, `ocean`
 
-## Installation
 
-Aucune dépendance externe : seulement la bibliothèque standard de Python (3.8+) avec Tkinter.
-
-```bash
-git clone https://github.com/<votre-compte>/<votre-depot>.git
-cd <votre-depot>
-python conversion_geodesique_commente.py
-```
-
-Pour choisir un thème :
-
-```bash
-python conversion_geodesique_commente.py clair
-```
-
-> Sous Linux, si Tkinter est absent : `sudo apt install python3-tk`
 
 ## Formules utilisées
 
@@ -52,13 +36,4 @@ Z = (N (1 − e²) + h) sin φ
 Pour le sens inverse, λ = atan2(Y, X), puis φ et h sont obtenus soit par une formule
 directe (sans boucle), soit par itération jusqu'à convergence.
 
-## Limites
 
-- Le cas des pôles (X = Y = 0) n'est pas traité.
-- Les contours des continents sont très simplifiés : ils servent uniquement de repère visuel.
-- Sur le schéma, l'aplatissement est exagéré ×40 ; seul le dessin est exagéré, les valeurs
-  calculées sont exactes.
-
-## Licence
-
-À définir (par exemple MIT).
