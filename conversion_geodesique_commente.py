@@ -1,11 +1,11 @@
-#HANAE EL KHIATI
+# HANAE EL KHIATI 
 """
 Conversion de coordonnées géodésiques + visualisation intelligente (schéma 3D et Terre)
   ①  (phi, lambda, h)  ->  (X, Y, Z)
   ②  (X, Y, Z)         ->  (phi, lambda, h)
 Chaque point converti est placé sur la Terre (globe 3D, glisser pour tourner).
 """
-# je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
+#  je convertis des coordonnées géographiques (latitude φ, longitude λ, hauteur h)
 # en coordonnées cartésiennes (X, Y, Z), et aussi dans l'autre sens.
 # J'ai ajouté un dessin pour voir le résultat : un schéma 3D de l'ellipsoïde et la Terre.
 #
@@ -20,7 +20,7 @@ import unittest
 import tkinter as tk
 from tkinter import ttk
 
-#  calcul:
+# calcul:
 # La Terre n'est pas une sphère parfaite, elle est un peu aplatie aux pôles. Je la représente
 # donc par un ellipsoïde, défini par deux longueurs en mètres :
 #   a = le demi-grand axe (le rayon à l'équateur)
@@ -225,13 +225,14 @@ def build_land_dots(step=2.2):
     return dots
 
 
-#  interface:
+# interface:
 # Thèmes de couleurs. Pour changer l'apparence du programme, il suffit de modifier
 # THEME juste en dessous, ou de lancer le programme avec le nom du thème :
 #     python mon_fichier.py clair
 # Thèmes disponibles : sombre, clair, foret, violet, chaud, ocean
 # Chaque thème donne une couleur à tous les éléments : fond, cartes, champs, texte,
 # couleur d'accent, globe, axes X Y Z, quadrillage, etc.
+# ----------------------------------------------------------------------
 THEMES = {
     "sombre": dict(BG="#0f172a", CARD="#1b2740", FIELD="#0b1220", LINE="#334155", FG="#e5e9f0",
                    MUTED="#94a3b8", ACC="#2dd4bf", ERR="#f87171", OK="#34d399",
@@ -445,7 +446,7 @@ class App(tk.Tk):
         # Je lance l'animation.
         self.tick()
 
-    # helpers graphiques
+    # ------------------------------------------------------------ helpers graphiques
     # --- Petites fonctions pour ne pas répéter le même code à chaque fois que je crée un champ,
     # un bouton, etc. ---
     def entry(self, parent, width, var=None):
@@ -494,7 +495,7 @@ class App(tk.Tk):
     def say(self, msg, ok=True):
         self.status.config(text=("✔ " if ok else "✖ ") + msg, fg=OK if ok else ERR)
 
-    #  logique:
+    # ------------------------------------------------------------ logique
     # Quand je change d'ellipsoïde dans la liste, j'affiche ses valeurs a et b. Je ne peux les
     # modifier à la main que si je choisis « Personnalisé ».
     def maj_ell(self):
@@ -568,7 +569,7 @@ class App(tk.Tk):
         self.ajouter_point(phi, lam, "②", h, (X, Y, Z))
         self.say("Conversion ② effectuée.")
 
-    #  points sur la Terre:
+    # ------------------------------------------------------------ points sur la Terre
     # J'enregistre le point converti : je lui donne une couleur, je l'ajoute à la liste sous le
     # dessin, et je tourne la vue vers lui.
     def ajouter_point(self, phi, lam, op, h=0.0, xyz=(0.0, 0.0, 0.0)):
@@ -609,7 +610,7 @@ class App(tk.Tk):
         self.spin += dx * 0.01
         self.tilt = max(-1.4, min(1.4, self.tilt + dy * 0.01))
 
-    #  dessin du globe:
+    # ------------------------------------------------------------ dessin du globe
     # Je calcule une seule fois par image les cosinus et sinus de la rotation, pour ne pas les
     # refaire à chaque point.
     def _rot(self):
@@ -887,32 +888,50 @@ class App(tk.Tk):
 
 # TEST UNITAIRE : le point Merchich
 # Pour le lancer :   python conversion_geodesique_avec_tests.py --test
-# Le but : vérifier que mes deux conversions sont justes sur un point connu, avec
-# l'ellipsoïde Clarke 1880 (celui de Merchich).
+# Le but : vérifier que mes deux conversions sont justes sur le vrai point Merchich du cours,
+# avec l'ellipsoïde Clarke 1880.
+# 
 class TestPointMerchich(unittest.TestCase):
-    # Mon point de test : φ et λ en degrés, h en mètres, et les X, Y, Z que je dois retrouver
-    # (en mètres, arrondis au millimètre). Je les ai recoupés avec une autre formule pour être
-    # sûr de moi. Pour tester le point donné par le professeur, il suffit de changer ces 6 nombres.
-    PHI, LAM, H = 35.7595, -5.8337, 60.0
-    X, Y, Z = 5155038.651, -526693.268, 3706332.466
+    # Les coordonnées géodésiques du point Merchich, telles qu'elles sont données dans le cours :
+    #   latitude  = 33°26'59.672" Nord
+    #   longitude =  7°33'27.295" Ouest
+    #   hauteur   = 243.419 m au sol, et 243.730 m au sommet du pilier
+    LAT_DMS, LON_DMS = "33 26 59.672 N", "7 33 27.295 W"
+
+    # Pour chaque hauteur : (h, X attendu, Y attendu, Z attendu), en mètres.
+    # Le cours ne donne pas X, Y, Z : je les ai calculés avec mon programme et recoupés avec une
+    # autre formule (latitude réduite), l'écart entre les deux est de l'ordre du nanomètre.
+    CAS = [
+        (243.419, 5281240.024, -700688.767, 3495569.845),   # au sol
+        (243.730, 5281240.281, -700688.801, 3495570.017),   # au sommet du pilier
+    ]
 
     def test_point_merchich(self):
         a, b = ELLIPSOIDES["Clarke 1880 (Merchich)"]
 
-        # Étape 1 : je pars de (φ, λ, h), je calcule (X, Y, Z) et je compare avec ce que
-        # j'attends. J'accepte 1 mm d'écart (à cause des valeurs arrondies).
-        x, y, z = geo_to_cart(math.radians(self.PHI), math.radians(self.LAM), self.H, a, b)
-        self.assertAlmostEqual(x, self.X, delta=0.001)
-        self.assertAlmostEqual(y, self.Y, delta=0.001)
-        self.assertAlmostEqual(z, self.Z, delta=0.001)
+        # Je lis la latitude et la longitude exactement comme le fait l'application :
+        # avec parse_angle, qui transforme le DMS en degrés décimaux (Ouest = négatif).
+        lat = parse_angle(self.LAT_DMS)
+        lon = parse_angle(self.LON_DMS)
+        self.assertAlmostEqual(lat, 33.449908889, places=8)
+        self.assertAlmostEqual(lon, -7.557581944, places=8)
 
-        # Étape 2 : je fais le chemin inverse avec mes deux méthodes (directe et itérative) et
-        # je dois retrouver φ, λ et h de départ.
-        for methode in (cart_to_geo_directe, cart_to_geo_iterative):
-            phi, lam, h = methode(self.X, self.Y, self.Z, a, b)
-            self.assertAlmostEqual(math.degrees(phi), self.PHI, places=7)
-            self.assertAlmostEqual(math.degrees(lam), self.LAM, places=7)
-            self.assertAlmostEqual(h, self.H, delta=0.005)
+        for h, X, Y, Z in self.CAS:
+            with self.subTest(hauteur=h):
+                # Étape 1 : je pars de (φ, λ, h), je calcule (X, Y, Z) et je compare avec ce que
+                # j'attends. J'accepte 1 mm d'écart (à cause des valeurs arrondies).
+                x, y, z = geo_to_cart(math.radians(lat), math.radians(lon), h, a, b)
+                self.assertAlmostEqual(x, X, delta=0.001)
+                self.assertAlmostEqual(y, Y, delta=0.001)
+                self.assertAlmostEqual(z, Z, delta=0.001)
+
+                # Étape 2 : je fais le chemin inverse avec mes deux méthodes (directe et
+                # itérative) et je dois retrouver φ, λ et h de départ.
+                for methode in (cart_to_geo_directe, cart_to_geo_iterative):
+                    phi, lam, hh = methode(X, Y, Z, a, b)
+                    self.assertAlmostEqual(math.degrees(phi), lat, places=7)
+                    self.assertAlmostEqual(math.degrees(lam), lon, places=7)
+                    self.assertAlmostEqual(hh, h, delta=0.005)
 
 
 if __name__ == "__main__":
