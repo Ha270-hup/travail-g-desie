@@ -1,39 +1,34 @@
 # HANAE EL KHIATI
 # Conversion de coordonnées géodésiques
 
-Application Python (Tkinter) qui convertit des coordonnées géodésiques en coordonnées
-cartésiennes 3D, et inversement, avec une visualisation interactive.
+J'ai réalisé une application Python (Tkinter) qui convertit des coordonnées géodésiques en coordonnées cartésiennes 3D, et inversement, avec une visualisation interactive.
 
-- **①** (φ, λ, h) → (X, Y, Z)
-- **②** (X, Y, Z) → (φ, λ, h), par méthode **directe** ou **itérative**
+Mon application fait deux conversions :
 
-Chaque point converti est affiché :
+① je pars de (φ, λ, h) et j'obtiens (X, Y, Z) ;
+② je pars de (X, Y, Z) et j'obtiens (φ, λ, h), au choix par la méthode directe ou par la méthode itérative.
 
-- sur un **schéma géodésique** pédagogique (ellipsoïde, axes X Y Z, normale, angles φ et λ,
-  hauteur h, projections de P) ;
-- sur un **globe terrestre 3D** que l'on fait tourner à la souris.
+Chaque point que je convertis est affiché de deux façons :
+
+sur un schéma géodésique que j'ai dessiné pour mieux comprendre (ellipsoïde, axes X, Y, Z, normale, angles φ et λ, hauteur h, projections du point P) ;
+sur un globe terrestre 3D que je peux faire tourner à la souris.
 
   ### Captures de l'interface
 **1. Conversion ① dans le schéma géodésique:**
 
-On saisit les coordonnées de la ville de Tanger  φ = 35.7595°, λ = -5.8337° et h = 60 m sur l'ellipsoïde Clarke 1880 (Merchich). Le programme calcule X = 5155038.6514 m, Y = -526693.2683 m et Z = 3706332.4660 m. Le schéma montre le point P1 sur l'ellipsoïde avec :
-
-les axes X, Y, Z et le méridien du point (en jaune) ;
-la normale à la surface, la hauteur h (en rose) et les angles φ et λ ;
-les projections en pointillés qui donnent X, Y et Z ;
-l'équateur en turquoise.
+Je saisis φ = 35.7595°, λ = -5.8337° et h = 60 m sur l'ellipsoïde Clarke 1880 (Merchich). Le programme calcule X = 5155038.6514 m, Y = -526693.2683 m et Z = 3706332.4660 m. Le schéma montre le point P1 sur l'ellipsoïde avec les axes X, Y, Z et le méridien du point (en jaune), la normale à la surface, la hauteur h (en rose) et les angles φ et λ. Les projections en pointillés me montrent d'où viennent X, Y et Z, et l'équateur est en turquoise.
  
 ![Fenêtre principale](conversion2.png)
 
 **2. Conversion ① vue Terre:**
 
-Le même point est placé sur le globe terrestre, que l'on peut faire tourner à la souris. Les continents sont représentés par des points, avec la grille de latitude et de longitude (pas réglable : 10°, 15° ou 30°). Le méridien de Greenwich est en orange, l'équateur en turquoise, et le méridien et le parallèle du point sélectionné sont tracés avec sa couleur. Une étiquette indique sa latitude et sa longitude.
+Je place le même point sur le globe terrestre, que je peux faire tourner à la souris. Les continents sont représentés par des points, avec la grille de latitude et de longitude dont je règle le pas (10°, 15° ou 30°). Le méridien de Greenwich est en orange, l'équateur en turquoise, et le méridien et le parallèle du point sélectionné sont tracés avec sa couleur. Une étiquette indique sa latitude et sa longitude.
 
 ![Schéma géodésique](schema.png)
 
 **3. Conversion ② : retour vers (φ, λ, h):**
 
-On reprend les valeurs X, Y, Z obtenues précédemment, avec la méthode itérative. Le programme retrouve φ = 35.759500000°, λ = -5.833700000° et h = 60.0000 m, soit en DMS φ = 35° 45' 34.200" et λ = -5° 50' 01.320". Le point 2 (en rouge) se superpose au point 1 dans la liste des points convertis : cela confirme que les deux conversions sont cohérentes.
+Je reprends les valeurs X, Y, Z obtenues précédemment, avec la méthode itérative. Le programme retrouve φ = 35.759500000°, λ = -5.833700000° et h = 60.0000 m, soit en degrés-minutes-secondes φ = 35° 45' 34.200" et λ = -5° 50' 01.320". Le point 2 (en rouge) se superpose au point 1 dans la liste des points convertis : cela me confirme que mes deux conversions sont cohérentes.
 
 ![Vue Terre](terre.png)
 
@@ -41,27 +36,26 @@ On reprend les valeurs X, Y, Z obtenues précédemment, avec la méthode itérat
 
 ## Fonctionnalités
 
-- Ellipsoïdes prédéfinis : Clarke 1880 (Merchich), GRS 80, WGS 84, Hayford 1909, ou **personnalisé** (a, b)
-- Saisie des angles en degrés décimaux (`35.7595`) ou en DMS (`35 45 34.2 N`, `5°50'01"W`)
-- Affichage du résultat en décimal et en DMS
-- Liste des points convertis, cliquable pour recentrer la vue
-- Grille latitude / longitude avec pas réglable (10°, 15°, 30°)
-- Test unitaire sur un point Merchich (voir plus bas)
+-Plusieurs ellipsoïdes sont proposés : Clarke 1880 (Merchich), GRS 80, WGS 84, Hayford 1909, ou un ellipsoïde personnalisé dont on renseigne a et b.
+-Les angles se saisissent en degrés décimaux ou en degrés-minutes-secondes (par exemple 35 45 34.2 N ou 5°50'01"W).
+-Le résultat s’affiche en décimal et en degrés-minutes-secondes.
+-Les points convertis sont rangés dans une liste. Un clic sur l’un d’eux recentre la vue dessus.
+-Une grille de latitude et de longitude peut être affichée, avec un pas réglable (10°, 15° ou 30°).
+-Un test unitaire a été écrit sur le point Merchich du cours (voir plus bas)
 
 
 
 ## Formules utilisées
 
-Avec e² = (a² − b²) / a² et N = a / √(1 − e² sin²φ) :
+Je calcule d'abord l'excentricité au carré, e² = (a² − b²) / a², puis le rayon de courbure du premier vertical, N = a / √(1 − e² sin²φ).
 
-```
+Pour passer de (φ, λ, h) à (X, Y, Z) :
+
 X = (N + h) cos φ cos λ
 Y = (N + h) cos φ sin λ
 Z = (N (1 − e²) + h) sin φ
-```
 
-Pour le sens inverse, λ = atan2(Y, X), puis φ et h sont obtenus soit par une formule
-directe (sans boucle), soit par itération jusqu'à convergence.
+Pour le sens inverse, je calcule la longitude avec λ = atan2(Y, X). Pour la latitude φ et la hauteur h, j'ai programmé deux méthodes : une formule directe, sans boucle, et une méthode itérative où je corrige φ à chaque tour jusqu'à ce qu'il ne change presque plus.
 
 
 ## Test unitaire : point Merchich
@@ -71,6 +65,13 @@ Un test unitaire (unittest, inclus avec Python) vérifie que les deux conversion
 Latitude φ	33°26'59.672" Nord
 Longitude λ	7°33'27.295" Ouest
 Hauteur h	243.419 m au sol, 243.730 m au sommet du pilier
+
+
+Les X, Y, Z que je dois retrouver (Clarke 1880)
+
+Hauteur	                  X (m)   	Y (m)	        Z (m)
+243.419 m (sol)	     5281240.024	-700688.767 	3495569.845
+243.730 m (pilier)	 5281240.281	-700688.801	  3495570.017
 
 
 
