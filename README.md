@@ -64,7 +64,7 @@ Pour le sens inverse, je calcule la longitude avec λ = atan2(Y, X). Pour la lat
 
 ## Test unitaire : point Merchich
 
-Un test unitaire (unittest, inclus avec Python) vérifie que les deux conversions sont justes sur un point, avec l'ellipsoïde Clarke 1880 (Merchich).
+Un test unitaire vérifie que les deux conversions sont justes sur un point, avec l'ellipsoïde Clarke 1880 (Merchich).
 
 Latitude φ	33°26'59.672" Nord
 Longitude λ	7°33'27.295" Ouest
