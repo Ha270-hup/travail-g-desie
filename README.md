@@ -21,23 +21,7 @@ Chaque point converti est affiché :
 - Grille latitude / longitude avec pas réglable (10°, 15°, 30°)
 - 6 thèmes de couleurs : `sombre`, `clair`, `foret`, `violet`, `chaud`, `ocean`
 
-## Installation
 
-Aucune dépendance externe : seulement la bibliothèque standard de Python (3.8+) avec Tkinter.
-
-```bash
-git clone https://github.com/<votre-compte>/<votre-depot>.git
-cd <votre-depot>
-python conversion_geodesique_commente.py
-```
-
-Pour choisir un thème :
-
-```bash
-python conversion_geodesique_commente.py clair
-```
-
-> Sous Linux, si Tkinter est absent : `sudo apt install python3-tk`
 
 ## Formules utilisées
 
