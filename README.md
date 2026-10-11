@@ -12,6 +12,22 @@ Chaque point converti est affiché :
   hauteur h, projections de P) ;
 - sur un **globe terrestre 3D** que l'on fait tourner à la souris.
 
+  ### Captures de l'interface
+ 
+**Fenêtre complète : conversion à gauche, globe à droite**
+ 
+![Fenêtre principale](images\conversion2.png)
+ 
+**Vue « Schéma géodésique » : normale, angles φ et λ, hauteur h, axes X Y Z**
+ 
+![Schéma géodésique](images\terre.png)
+ 
+**Vue « Terre » : globe coloré avec les points convertis**
+ 
+![Vue Terre](images\schema.png)
+
+
+
 ## Fonctionnalités
 
 - Ellipsoïdes prédéfinis : Clarke 1880 (Merchich), GRS 80, WGS 84, Hayford 1909, ou **personnalisé** (a, b)
@@ -35,5 +51,6 @@ Z = (N (1 − e²) + h) sin φ
 
 Pour le sens inverse, λ = atan2(Y, X), puis φ et h sont obtenus soit par une formule
 directe (sans boucle), soit par itération jusqu'à convergence.
+
 
 
