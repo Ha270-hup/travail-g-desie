@@ -1,7 +1,7 @@
 # HANAE EL KHIATI
 # Conversion de coordonnées géodésiques
 
-J'ai réalisé une application Python (Tkinter) qui convertit des coordonnées géodésiques en coordonnées cartésiennes 3D, et inversement, avec une visualisation interactive.
+J'ai réalisé un programme Python (Tkinter) qui convertit des coordonnées géodésiques en coordonnées cartésiennes 3D, et inversement, avec une visualisation interactive.
 
 Mon application fait deux conversions :
 
