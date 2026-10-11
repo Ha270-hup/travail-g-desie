@@ -68,11 +68,9 @@ directe (sans boucle), soit par itération jusqu'à convergence.
 
 Un test unitaire (unittest, inclus avec Python) vérifie que les deux conversions sont justes sur un point, avec l'ellipsoïde Clarke 1880 (Merchich).
 
+Latitude φ	33°26'59.672" Nord
+Longitude λ	7°33'27.295" Ouest
+Hauteur h	243.419 m au sol, 243.730 m au sommet du pilier
 
-φ	35.7595°
-λ	-5.8337°
-h	60 m
-X attendu	5155038.651 m
-Y attendu	-526693.268 m
-Z attendu	3706332.466 m
+
 
