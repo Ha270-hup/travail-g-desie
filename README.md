@@ -14,17 +14,15 @@ Chaque point converti est affiché :
 
   ### Captures de l'interface
  
-**Fenêtre complète : conversion à gauche, globe à droite**
- 
-![Fenêtre principale](images\conversion2.png)
- 
+![Fenêtre principale](images/conversion2.png)
+
 **Vue « Schéma géodésique » : normale, angles φ et λ, hauteur h, axes X Y Z**
- 
-![Schéma géodésique](images\terre.png)
- 
+
+![Schéma géodésique](images/schema.png)
+
 **Vue « Terre » : globe coloré avec les points convertis**
- 
-![Vue Terre](images\schema.png)
+
+![Vue Terre](images/terre.png)
 
 
 
