@@ -67,11 +67,11 @@ Longitude λ	7°33'27.295" Ouest
 Hauteur h	243.419 m au sol, 243.730 m au sommet du pilier
 
 
-Les X, Y, Z que je dois retrouver (Clarke 1880)
+## Ce que mon test vérifie
 
-Hauteur	                  X (m)   	Y (m)	        Z (m)
-243.419 m (sol)	     5281240.024	-700688.767 	3495569.845
-243.730 m (pilier)	 5281240.281	-700688.801	  3495570.017
+Je vérifie que mon programme lit bien le DMS et le transforme en degrés décimaux : 33.449908889° pour la latitude et -7.557581944° pour la longitude (l'Ouest est négatif).
+Pour la conversion ①, je pars de φ, λ et h, et je dois retrouver X, Y et Z à 1 mm près.
+Pour la conversion ②, je pars de X, Y et Z, et mes deux méthodes (directe et itérative) doivent retrouver φ, λ et h de départ. J'accepte 10⁻⁷ degré d'écart sur φ et λ, et 5 mm sur h.
 
 
 
