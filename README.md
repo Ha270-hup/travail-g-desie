@@ -18,7 +18,7 @@ Chaque point converti est affiché :
 
 **Vue « Schéma géodésique » : normale, angles φ et λ, hauteur h, axes XYZ**
 
-![Schéma géodésique](schéma.png)
+![Schéma géodésique](schema.png)
 
 **Vue « Terre » : globe coloré avec les points convertis**
 
