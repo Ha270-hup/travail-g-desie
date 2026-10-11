@@ -52,13 +52,4 @@ Z = (N (1 − e²) + h) sin φ
 Pour le sens inverse, λ = atan2(Y, X), puis φ et h sont obtenus soit par une formule
 directe (sans boucle), soit par itération jusqu'à convergence.
 
-## Limites
 
-- Le cas des pôles (X = Y = 0) n'est pas traité.
-- Les contours des continents sont très simplifiés : ils servent uniquement de repère visuel.
-- Sur le schéma, l'aplatissement est exagéré ×40 ; seul le dessin est exagéré, les valeurs
-  calculées sont exactes.
-
-## Licence
-
-À définir (par exemple MIT).
